@@ -2,9 +2,8 @@
 
 int transform(int c)
 {
-return  ~c;
+	return  ~c;
 }
-
 
 int main()
 {
