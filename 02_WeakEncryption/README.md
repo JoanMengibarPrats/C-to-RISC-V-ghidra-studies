@@ -97,3 +97,18 @@ Cuando `getchar` devuelve `-1` (fin de archivo), la instrucción `bne` del bloqu
 
 
 3. Restaura el tamaño de la pila (`addi sp, sp, 0x30`) y ejecuta `ret` para devolver el control al sistema operativo.
+
+## Crackeo
+
+El cifrado basa su teórica seguridad en sumar los valores ASCII de los caracteres de una contraseña para generar una clave. Aunque contraseñas largas generen un número entero elevado (como 1116 para "Chocolate1234"), la escritura del archivo mediante la función putchar recorta de forma silenciosa el valor a 8 bits.
+
+Matemáticamente, este desbordamiento equivale a realizar la operación suma_ascii % 256. Esto reduce drásticamente el espacio de búsqueda: sin importar la longitud o complejidad de la contraseña original, solo existen 256 claves criptográficas posibles (del 0 al 255). Además, provoca colisiones constantes; cualquier contraseña alternativa cuya suma ASCII comparta el mismo residuo módulo 256 (como "ttt", que suma 348, y 348 % 256 = 92) funcionará como clave maestra válida.
+
+Para romper el cifrado, el siguiente script (Crack.c) aprovecha este reducido espacio de estados. En lugar de realizar ataques de diccionario para adivinar la contraseña original o usar heurísticas con sesgos, aplica fuerza bruta pura iterando sobre las 256 máscaras matemáticas posibles y aplicando la operación inversa (XOR es simétrico) a cada byte del archivo.
+
+Una vez compilado el código se puede ejecutar el siguiente comando para obtener un fichero .txt con 256 posibilidades de texto descifrado:
+
+``` bash
+qemu-riscv64 -L /usr/riscv64-linux-gnu ./Crack.elf Cifrado > posibilidades.txt
+```
+En este posibilidades.txt se encuentra nuestro "Secreto", se podría programar algo para sacar la clave directamente. Además, como tenemos el texto cifrado y el descifrado, podemos calcular el valor del hash y de este valor hacer una base de datos con todas las posibles contraseñas.
